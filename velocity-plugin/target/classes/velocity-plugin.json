@@ -1,0 +1,1 @@
+{"id":"mmmvelocitybridge","name":"MMMVelocityBridge-Velocity","version":"1.0.0","description":"Exposes proxy online/max player counts to backend servers","authors":["Xiaomenxin"],"dependencies":[],"main":"local.mmm.velocitybridge.VelocityBridgePlugin"}
