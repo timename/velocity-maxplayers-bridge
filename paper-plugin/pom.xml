@@ -5,27 +5,31 @@
 
     <parent>
         <groupId>local.mmm</groupId>
-        <artifactId>velocity-maxplayers-bridge-parent</artifactId>
-        <version>1.0.0</version>
+        <artifactId>mmm-velocity-bridge-parent</artifactId>
+        <version>2.0.0</version>
     </parent>
 
-    <artifactId>velocity-maxplayers-bridge-paper</artifactId>
+    <artifactId>mmm-velocity-bridge-purpur</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>org.purpurmc.purpur</groupId>
             <artifactId>purpur-api</artifactId>
-            <version>1.21.10-R0.1-SNAPSHOT</version>
-            <scope>system</scope>
-            <systemPath>E:/MCserver/MMM/purpur1.21.10_Adventure/libraries/org/purpurmc/purpur/purpur-api/1.21.10-R0.1-SNAPSHOT/purpur-api-1.21.10-R0.1-SNAPSHOT.jar</systemPath>
+            <version>${purpur.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>
-            <version>2.12.2</version>
-            <scope>system</scope>
-            <systemPath>E:/MCserver/MMM/purpur1.21.10_Adventure/plugins/PlaceholderAPI-2.12.2.jar</systemPath>
+            <version>${placeholderapi.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -34,10 +38,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
-                <configuration>
-                    <release>${maven.compiler.release}</release>
-                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

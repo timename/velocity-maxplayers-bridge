@@ -4,8 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>local.mmm</groupId>
-    <artifactId>velocity-maxplayers-bridge-parent</artifactId>
-    <version>1.0.0</version>
+    <artifactId>mmm-velocity-bridge-parent</artifactId>
+    <version>2.0.0</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -16,5 +16,45 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <velocity.version>3.5.0-SNAPSHOT</velocity.version>
+        <purpur.version>1.21.11-R0.1-SNAPSHOT</purpur.version>
+        <placeholderapi.version>2.12.2</placeholderapi.version>
+        <gson.version>2.11.0</gson.version>
+        <junit.version>5.11.4</junit.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
+        </repository>
+        <repository>
+            <id>purpur-snapshots</id>
+            <url>https://repo.purpurmc.org/snapshots</url>
+        </repository>
+        <repository>
+            <id>placeholderapi</id>
+            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+        </repository>
+    </repositories>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.13.0</version>
+                    <configuration>
+                        <release>${maven.compiler.release}</release>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.5.2</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>

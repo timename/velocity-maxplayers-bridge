@@ -1,9 +1,0 @@
-{
-  "id": "mmmvelocitybridge",
-  "name": "MMMVelocityBridge-Velocity",
-  "version": "1.0.0",
-  "main": "local.mmm.velocitybridge.VelocityBridgePlugin",
-  "authors": [
-    "Xiaomenxin"
-  ]
-}

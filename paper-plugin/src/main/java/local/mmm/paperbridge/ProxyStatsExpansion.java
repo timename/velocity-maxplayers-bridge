@@ -6,14 +6,16 @@ import org.bukkit.OfflinePlayer;
 public final class ProxyStatsExpansion extends PlaceholderExpansion {
 
     private final PaperBridgePlugin plugin;
+    private final String identifier;
 
-    public ProxyStatsExpansion(PaperBridgePlugin plugin) {
+    public ProxyStatsExpansion(PaperBridgePlugin plugin, String identifier) {
         this.plugin = plugin;
+        this.identifier = identifier;
     }
 
     @Override
     public String getIdentifier() {
-        return "mmmproxy";
+        return identifier;
     }
 
     @Override
@@ -23,7 +25,7 @@ public final class ProxyStatsExpansion extends PlaceholderExpansion {
 
     @Override
     public String getVersion() {
-        return "1.0.0";
+        return "2.0.0";
     }
 
     @Override

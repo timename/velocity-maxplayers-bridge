@@ -1,7 +1,0 @@
-name: MMMProxyStats-Purpur
-version: 1.0.0
-main: local.mmm.paperbridge.PaperBridgePlugin
-api-version: "1.21"
-author: Xiaomenxin
-depend:
-  - PlaceholderAPI
