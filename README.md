@@ -1,6 +1,6 @@
 # MMMVelocityBridge
 
-MMMVelocityBridge 在 Velocity 与 Purpur 之间提供代理统计和跨服玩家在线状态桥接。作者：Xiaomenxin。当前版本：`2.0.0`。
+MMMVelocityBridge 在 Velocity 与 Purpur 之间提供代理统计和跨服玩家在线状态桥接。作者：Xiaomenxin。当前版本：`2.0.1`。
 
 - [更新记录](CHANGELOG.md)
 - [技术指南](TECHNICAL_GUIDE.md)
@@ -27,8 +27,8 @@ MMMVelocityBridge 在 Velocity 与 Purpur 之间提供代理统计和跨服玩�
 
 1. 停止代理和后端服务，备份插件目录及代理数据目录。
 2. 删除旧的 `MMMVelocityBridge`、`MMMProxyStats-Purpur` JAR，不要与新插件同时加载。
-3. 将 `mmm-velocity-bridge-velocity-2.0.0.jar` 放入 Velocity 的 `plugins` 目录。
-4. 将 `mmm-velocity-bridge-purpur-2.0.0.jar` 放入每个 Purpur 的 `plugins` 目录。
+3. 将 `mmm-velocity-bridge-velocity-2.0.1.jar` 放入 Velocity 的 `plugins` 目录。
+4. 将 `mmm-velocity-bridge-purpur-2.0.1.jar` 放入每个 Purpur 的 `plugins` 目录。
 5. 启动顺序为 Velocity、各 Purpur 桥接、再启动依赖 Presence 的业务插件。
 
 本版本不迁移旧数据；新代理数据文件会在插件数据目录中创建为 `last-disconnects.json`。更新前请保留备份，回滚时必须成套回滚两端 JAR。

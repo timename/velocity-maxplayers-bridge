@@ -28,7 +28,7 @@ import java.util.UUID;
 @Plugin(
         id = "mmmvelocitybridge",
         name = "MMMVelocityBridge-Velocity",
-        version = "2.0.0",
+        version = "2.0.1",
         description = "Bridges proxy statistics and player presence to backend servers",
         authors = {"Xiaomenxin"}
 )
