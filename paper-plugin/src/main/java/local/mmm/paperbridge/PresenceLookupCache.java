@@ -10,11 +10,17 @@ import java.util.UUID;
 final class PresenceLookupCache {
 
     private final Duration ttl;
+    private final Duration shortTtl;
     private final Map<UUID, CachedPresence> cached = new HashMap<>();
     private final Map<UUID, PendingPresenceRequest> pending = new HashMap<>();
 
     PresenceLookupCache(Duration ttl) {
+        this(ttl, ttl);
+    }
+
+    PresenceLookupCache(Duration ttl, Duration shortTtl) {
         this.ttl = ttl;
+        this.shortTtl = shortTtl;
     }
 
     synchronized PresenceLookupResult lookup(UUID targetPlayerId, Instant now) {
@@ -40,12 +46,13 @@ final class PresenceLookupCache {
             return;
         }
         pending.remove(response.targetPlayerId());
-        cached.put(response.targetPlayerId(), new CachedPresence(response.snapshot(), now.plus(ttl)));
+        Duration responseTtl = response.snapshot().state() == ProxyPresenceState.ONLINE ? ttl : shortTtl;
+        cached.put(response.targetPlayerId(), new CachedPresence(response.snapshot(), now.plus(responseTtl)));
     }
 
     synchronized void fail(PendingPresenceRequest request, Instant now) {
         if (pending.remove(request.targetPlayerId(), request)) {
-            cached.put(request.targetPlayerId(), new CachedPresence(ProxyPresenceSnapshot.unknown(), now.plus(ttl)));
+            cached.put(request.targetPlayerId(), new CachedPresence(ProxyPresenceSnapshot.unknown(), now.plus(shortTtl)));
         }
     }
 

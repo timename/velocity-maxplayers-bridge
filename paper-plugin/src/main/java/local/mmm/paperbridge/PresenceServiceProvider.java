@@ -13,12 +13,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 final class PresenceServiceProvider {
 
     private static final Duration CACHE_TTL = Duration.ofSeconds(30);
+    private static final Duration UNKNOWN_CACHE_TTL = Duration.ofSeconds(5);
     private static final long RESPONSE_TIMEOUT_TICKS = 100L;
     private static final int MAX_REQUESTS_PER_TICK = 64;
 
     private final JavaPlugin plugin;
     private final ProxyStatsMessenger messenger;
-    private final PresenceLookupCache cache = new PresenceLookupCache(CACHE_TTL);
+    private final PresenceLookupCache cache = new PresenceLookupCache(CACHE_TTL, UNKNOWN_CACHE_TTL);
     private final ConcurrentLinkedQueue<PendingPresenceRequest> pendingSends = new ConcurrentLinkedQueue<>();
     private final Clock clock;
 

@@ -59,6 +59,30 @@ class PresenceLookupCacheTest {
     }
 
     @Test
+    void expiresUnknownStateBeforeKnownStateTtl() {
+        PresenceLookupCache cache = new PresenceLookupCache(Duration.ofSeconds(30), Duration.ofSeconds(5));
+        PendingPresenceRequest request = cache.lookup(TARGET_ID, NOW).pendingRequest().orElseThrow();
+
+        cache.fail(request, NOW.plusSeconds(1));
+
+        assertEquals(ProxyPresenceState.UNKNOWN, cache.lookup(TARGET_ID, NOW.plusSeconds(4)).snapshot().state());
+        assertTrue(cache.lookup(TARGET_ID, NOW.plusSeconds(7)).pendingRequest().isPresent());
+    }
+
+    @Test
+    void refreshesOfflineStateBeforeOnlineStateTtl() {
+        PresenceLookupCache cache = new PresenceLookupCache(Duration.ofSeconds(30), Duration.ofSeconds(5));
+        PendingPresenceRequest request = cache.lookup(TARGET_ID, NOW).pendingRequest().orElseThrow();
+        ProxyPresenceSnapshot offline = new ProxyPresenceSnapshot(
+                ProxyPresenceState.OFFLINE_RECENT, NOW.toEpochMilli(), "");
+
+        cache.complete(new ProxyPresenceResponse(request.requestId(), TARGET_ID, offline), NOW.plusSeconds(1));
+
+        assertEquals(ProxyPresenceState.OFFLINE_RECENT, cache.lookup(TARGET_ID, NOW.plusSeconds(4)).snapshot().state());
+        assertTrue(cache.lookup(TARGET_ID, NOW.plusSeconds(7)).pendingRequest().isPresent());
+    }
+
+    @Test
     void sendsOnlyOneRequestWhenConcurrentLookupsTargetTheSamePlayer() throws Exception {
         PresenceLookupCache cache = new PresenceLookupCache(Duration.ofSeconds(30));
         ExecutorService executor = Executors.newFixedThreadPool(8);
