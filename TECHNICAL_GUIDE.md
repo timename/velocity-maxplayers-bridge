@@ -24,7 +24,7 @@ Velocity 匹配频道后立即将消息标记为 handled，Presence 请求只接
 
 ## Presence 数据流
 
-Velocity 使用 `ProxyServer#getPlayer(UUID)` 作为在线权威。`DisconnectEvent` 写入最后断开时间，服务器切换不会写入离线状态。查询时动态计算一小时边界，历史缺失返回 `UNKNOWN`。
+Velocity 使用 `ProxyServer#getPlayer(UUID)` 作为在线权威。`DisconnectEvent` 写入最后断开时间，服务器切换不会写入离线状态。代理内部状态解析使用一小时历史边界区分 `OFFLINE_RECENT` 与 `OFFLINE_LONG`；MMMFlight 的实际公共回能降速边界由其 `offline-rate.after-offline-seconds` 配置独立决定，默认 30 秒。历史缺失返回 `UNKNOWN`。
 
 断开历史保存为插件数据目录的 `last-disconnects.json`，根对象直接映射 UUID 字符串到断开 epoch 毫秒，例如 `{ "uuid": 1723686400000 }`。读取、查询和写入都会忽略超过七天的记录。内存映射使用 O(1) 查询；写入通过单线程防抖、快照复制、临时文件和原子替换完成。旧格式不迁移；文件损坏时记录警告并以空历史运行，管理员应先备份损坏文件，后续成功保存会写入新格式。
 
@@ -38,7 +38,7 @@ MMMFlight 1.12.4 提供 `local.mmm.flight.api.ProxyPresenceService`，并通过 
 
 ## 开发与验证
 
-从工程根目录执行 `mvn test` 运行全部单元测试，执行 `mvn clean verify` 生成两个 JAR。测试覆盖状态边界、Presence v1 编解码、Presence 推送序列、断开历史清理、缓存 TTL、并发去重、等待 Future 和未知响应。发布前还需手工验证登录、切服、断开一小时边界、代理重启、无载体、空闲后端和客户端伪造消息场景。
+从工程根目录执行 `mvn test` 运行全部单元测试，执行 `mvn clean verify` 生成两个 JAR。测试覆盖代理状态一小时内部边界、Presence v1 编解码、Presence 推送序列、断开历史清理、缓存 TTL、并发去重、等待 Future 和未知响应。发布前还需手工验证登录、切服、断开后 30 秒公共回能边界、代理重启、无载体、空闲后端和客户端伪造消息场景。
 
 ## 维护风险
 
