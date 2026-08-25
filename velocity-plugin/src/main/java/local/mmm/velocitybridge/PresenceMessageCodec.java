@@ -12,6 +12,7 @@ public final class PresenceMessageCodec {
 
     public static final String REQUEST_TYPE = "presence_request";
     public static final String RESPONSE_TYPE = "presence_response";
+    public static final String PUSH_TYPE = "presence_push";
     public static final int PROTOCOL_VERSION = 1;
 
     private PresenceMessageCodec() {
@@ -64,6 +65,35 @@ public final class PresenceMessageCodec {
                     targetPlayerId,
                     new ProxyPresenceSnapshot(state, lastDisconnectEpochMillis, currentServer)
             ));
+        } catch (IOException | IllegalArgumentException exception) {
+            return Optional.empty();
+        }
+    }
+
+    public static byte[] encodePush(PresencePush push) {
+        return write(output -> {
+            output.writeUTF(PUSH_TYPE);
+            output.writeInt(PROTOCOL_VERSION);
+            output.writeLong(push.sequence());
+            writeUuid(output, push.targetPlayerId());
+            output.writeUTF(push.snapshot().state().name());
+            output.writeLong(push.snapshot().lastDisconnectEpochMillis());
+            output.writeUTF(push.snapshot().currentServer());
+        });
+    }
+
+    public static Optional<PresencePush> decodePush(byte[] message) {
+        try (DataInputStream input = new DataInputStream(new ByteArrayInputStream(message))) {
+            if (!PUSH_TYPE.equals(input.readUTF()) || input.readInt() != PROTOCOL_VERSION) {
+                return Optional.empty();
+            }
+            long sequence = input.readLong();
+            UUID targetPlayerId = readUuid(input);
+            ProxyPresenceState state = ProxyPresenceState.valueOf(input.readUTF());
+            long lastDisconnectEpochMillis = input.readLong();
+            String currentServer = input.readUTF();
+            return Optional.of(new PresencePush(sequence, targetPlayerId, new ProxyPresenceSnapshot(
+                    state, lastDisconnectEpochMillis, currentServer)));
         } catch (IOException | IllegalArgumentException exception) {
             return Optional.empty();
         }

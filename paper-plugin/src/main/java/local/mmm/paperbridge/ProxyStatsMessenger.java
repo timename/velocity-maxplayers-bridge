@@ -59,6 +59,9 @@ public final class ProxyStatsMessenger implements PluginMessageListener {
             case "presence_response" -> PresenceMessageCodec.decodeResponse(message)
                     .ifPresentOrElse(plugin::updatePresence,
                             () -> warnings.warn("presence-malformed", "收到畸形 Presence 响应"));
+            case "presence_push" -> PresenceMessageCodec.decodePush(message)
+                    .ifPresentOrElse(plugin::updatePresencePush,
+                            () -> warnings.warn("presence-push-malformed", "收到畸形 Presence 推送"));
             default -> warnings.warn("message-unknown", "收到未知代理消息类型: " + responseType);
         }
     }

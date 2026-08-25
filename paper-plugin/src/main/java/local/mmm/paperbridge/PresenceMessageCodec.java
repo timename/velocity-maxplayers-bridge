@@ -12,6 +12,7 @@ final class PresenceMessageCodec {
 
     private static final String REQUEST_TYPE = "presence_request";
     private static final String RESPONSE_TYPE = "presence_response";
+    private static final String PUSH_TYPE = "presence_push";
     private static final int PROTOCOL_VERSION = 1;
 
     private PresenceMessageCodec() {
@@ -45,6 +46,39 @@ final class PresenceMessageCodec {
                     targetPlayerId,
                     new ProxyPresenceSnapshot(state, lastDisconnectEpochMillis, currentServer)
             ));
+        } catch (IOException | IllegalArgumentException exception) {
+            return Optional.empty();
+        }
+    }
+
+    static byte[] encodePush(PresencePush push) {
+        try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+             DataOutputStream output = new DataOutputStream(bytes)) {
+            output.writeUTF(PUSH_TYPE);
+            output.writeInt(PROTOCOL_VERSION);
+            output.writeLong(push.sequence());
+            writeUuid(output, push.targetPlayerId());
+            output.writeUTF(push.snapshot().state().name());
+            output.writeLong(push.snapshot().lastDisconnectEpochMillis());
+            output.writeUTF(push.snapshot().currentServer());
+            return bytes.toByteArray();
+        } catch (IOException exception) {
+            throw new IllegalStateException("无法编码 Presence 推送", exception);
+        }
+    }
+
+    static Optional<PresencePush> decodePush(byte[] message) {
+        try (DataInputStream input = new DataInputStream(new ByteArrayInputStream(message))) {
+            if (!PUSH_TYPE.equals(input.readUTF()) || input.readInt() != PROTOCOL_VERSION) {
+                return Optional.empty();
+            }
+            long sequence = input.readLong();
+            UUID targetPlayerId = readUuid(input);
+            ProxyPresenceState state = ProxyPresenceState.valueOf(input.readUTF());
+            long lastDisconnectEpochMillis = input.readLong();
+            String currentServer = input.readUTF();
+            return Optional.of(new PresencePush(sequence, targetPlayerId, new ProxyPresenceSnapshot(
+                    state, lastDisconnectEpochMillis, currentServer)));
         } catch (IOException | IllegalArgumentException exception) {
             return Optional.empty();
         }

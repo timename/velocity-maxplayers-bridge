@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.UUID;
 import org.bukkit.Bukkit;
+import org.bukkit.event.Event;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.ServicePriority;
 
@@ -18,10 +19,10 @@ final class MmmFlightPresenceIntegration {
     private MmmFlightPresenceIntegration() {
     }
 
-    static boolean register(PaperBridgePlugin plugin, PresenceServiceProvider presenceService) {
+    static PresenceChangeNotifier register(PaperBridgePlugin plugin, PresenceServiceProvider presenceService) {
         Plugin flightPlugin = Bukkit.getPluginManager().getPlugin("MMMFlight");
         if (flightPlugin == null) {
-            return false;
+            return null;
         }
 
         try {
@@ -35,11 +36,26 @@ final class MmmFlightPresenceIntegration {
                     presenceService, presenceConstructor, stateValueOf);
             Object service = Proxy.newProxyInstance(flightClassLoader, new Class<?>[] {serviceType}, handler);
             registerService(plugin, serviceType, service);
-            return true;
+            return createPresenceChangeNotifier(flightClassLoader, presenceConstructor, stateValueOf);
         } catch (ReflectiveOperationException | LinkageError | RuntimeException exception) {
             plugin.getLogger().log(java.util.logging.Level.WARNING,
                     "无法注册 MMMFlight Presence 服务，公共回能将安全停用", exception);
-            return false;
+            return null;
+        }
+    }
+
+    private static PresenceChangeNotifier createPresenceChangeNotifier(
+            ClassLoader flightClassLoader,
+            Constructor<?> presenceConstructor,
+            Method stateValueOf
+    ) {
+        try {
+            Class<?> eventType = Class.forName(
+                    "local.mmm.flight.api.ProxyPresenceChangedEvent", true, flightClassLoader);
+            Constructor<?> eventConstructor = eventType.getConstructor(UUID.class, presenceConstructor.getDeclaringClass());
+            return new ReflectionPresenceChangeNotifier(eventConstructor, presenceConstructor, stateValueOf);
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException exception) {
+            return (playerUuid, snapshot) -> { };
         }
     }
 
@@ -77,6 +93,29 @@ final class MmmFlightPresenceIntegration {
                         state, snapshot.lastDisconnectEpochMillis(), snapshot.currentServer());
             } catch (ReflectiveOperationException exception) {
                 throw new IllegalStateException("无法创建 MMMFlight Presence 响应", exception);
+            }
+        }
+    }
+
+    interface PresenceChangeNotifier {
+        void notifyChanged(UUID playerUuid, ProxyPresenceSnapshot snapshot);
+    }
+
+    private record ReflectionPresenceChangeNotifier(
+            Constructor<?> eventConstructor,
+            Constructor<?> presenceConstructor,
+            Method stateValueOf
+    ) implements PresenceChangeNotifier {
+
+        @Override
+        public void notifyChanged(UUID playerUuid, ProxyPresenceSnapshot snapshot) {
+            try {
+                Object state = stateValueOf.invoke(null, snapshot.state().name());
+                Object presence = presenceConstructor.newInstance(
+                        state, snapshot.lastDisconnectEpochMillis(), snapshot.currentServer());
+                Bukkit.getPluginManager().callEvent((Event) eventConstructor.newInstance(playerUuid, presence));
+            } catch (ReflectiveOperationException | RuntimeException exception) {
+                throw new IllegalStateException("无法通知 MMMFlight Presence 变化", exception);
             }
         }
     }

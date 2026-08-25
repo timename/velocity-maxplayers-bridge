@@ -39,4 +39,13 @@ class PresenceMessageCodecTest {
         );
         assertTrue(PresenceMessageCodec.decodeResponse(new byte[] {0, 1, 2}).isEmpty());
     }
+
+    @Test
+    void encodesAndDecodesOrderedPresencePushes() {
+        ProxyPresenceSnapshot snapshot = new ProxyPresenceSnapshot(
+                ProxyPresenceState.ONLINE, 0L, "survival");
+        PresencePush push = new PresencePush(42L, TARGET_ID, snapshot);
+
+        assertEquals(push, PresenceMessageCodec.decodePush(PresenceMessageCodec.encodePush(push)).orElseThrow());
+    }
 }

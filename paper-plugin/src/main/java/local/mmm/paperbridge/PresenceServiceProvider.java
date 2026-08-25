@@ -22,6 +22,7 @@ final class PresenceServiceProvider {
     private final PresenceLookupCache cache = new PresenceLookupCache(CACHE_TTL, UNKNOWN_CACHE_TTL);
     private final ConcurrentLinkedQueue<PendingPresenceRequest> pendingSends = new ConcurrentLinkedQueue<>();
     private final Clock clock;
+    private volatile boolean closed;
 
     PresenceServiceProvider(JavaPlugin plugin, ProxyStatsMessenger messenger) {
         this(plugin, messenger, Clock.systemUTC());
@@ -34,16 +35,32 @@ final class PresenceServiceProvider {
     }
 
     CompletableFuture<ProxyPresenceSnapshot> lookup(UUID targetPlayerId) {
+        if (closed) {
+            return CompletableFuture.completedFuture(ProxyPresenceSnapshot.unknown());
+        }
         PresenceLookupResult lookup = cache.lookup(targetPlayerId, clock.instant());
         lookup.pendingRequest().ifPresent(pendingSends::offer);
-        return CompletableFuture.completedFuture(lookup.snapshot());
+        return lookup.future();
     }
 
     void accept(ProxyPresenceResponse response) {
+        if (closed) {
+            return;
+        }
         cache.complete(response, clock.instant());
     }
 
+    boolean acceptPush(PresencePush push) {
+        if (closed) {
+            return false;
+        }
+        return cache.updatePush(push, clock.instant());
+    }
+
     void processPendingRequests() {
+        if (closed) {
+            return;
+        }
         PendingPresenceRequest request = pendingSends.poll();
         if (request == null) {
             return;
@@ -64,9 +81,11 @@ final class PresenceServiceProvider {
     }
 
     void clearPendingRequests() {
+        closed = true;
         PendingPresenceRequest request;
         while ((request = pendingSends.poll()) != null) {
             cache.fail(request, clock.instant());
         }
+        cache.clear(clock.instant());
     }
 }

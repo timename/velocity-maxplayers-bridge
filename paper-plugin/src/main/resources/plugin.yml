@@ -1,5 +1,5 @@
 name: MMMVelocityBridge-Purpur
-version: 2.0.2
+version: 2.0.4
 main: local.mmm.paperbridge.PaperBridgePlugin
 api-version: "1.21"
 author: Xiaomenxin

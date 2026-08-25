@@ -9,6 +9,7 @@ public final class PaperBridgePlugin extends JavaPlugin {
     private AutoCloseable placeholderApiIntegration;
     private ProxyStatsMessenger messenger;
     private PresenceServiceProvider presenceService;
+    private MmmFlightPresenceIntegration.PresenceChangeNotifier presenceChangeNotifier;
     private int requestTaskId = -1;
     private int presenceTaskId = -1;
     private volatile int proxyOnline = 0;
@@ -21,7 +22,8 @@ public final class PaperBridgePlugin extends JavaPlugin {
         getServer().getMessenger().registerOutgoingPluginChannel(this, ProxyStatsMessenger.CHANNEL);
 
         presenceService = new PresenceServiceProvider(this, messenger);
-        if (MmmFlightPresenceIntegration.register(this, presenceService)) {
+        presenceChangeNotifier = MmmFlightPresenceIntegration.register(this, presenceService);
+        if (presenceChangeNotifier != null) {
             getLogger().info("已注册 MMMFlight Presence 服务");
         }
 
@@ -85,6 +87,13 @@ public final class PaperBridgePlugin extends JavaPlugin {
     void updatePresence(ProxyPresenceResponse response) {
         if (presenceService != null) {
             presenceService.accept(response);
+        }
+    }
+
+    void updatePresencePush(PresencePush push) {
+        if (presenceService != null && presenceService.acceptPush(push)
+                && presenceChangeNotifier != null) {
+            presenceChangeNotifier.notifyChanged(push.targetPlayerId(), push.snapshot());
         }
     }
 

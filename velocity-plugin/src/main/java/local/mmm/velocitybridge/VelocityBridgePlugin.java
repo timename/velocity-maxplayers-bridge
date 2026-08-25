@@ -5,6 +5,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.PostLoginEvent;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
+import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
@@ -22,13 +23,16 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Plugin(
         id = "mmmvelocitybridge",
         name = "MMMVelocityBridge-Velocity",
-        version = "2.0.2",
+        version = "2.0.3",
         description = "Bridges proxy statistics and player presence to backend servers",
         authors = {"Xiaomenxin"}
 )
@@ -42,6 +46,7 @@ public final class VelocityBridgePlugin {
     private final RateLimitedLogger warnings;
     private final Clock clock;
     private final PresenceHistory presenceHistory;
+    private final AtomicLong presenceSequence = new AtomicLong(System.currentTimeMillis() << 20);
 
     @Inject
     public VelocityBridgePlugin(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
@@ -67,8 +72,21 @@ public final class VelocityBridgePlugin {
     }
 
     @Subscribe
+    public void onServerPostConnect(ServerPostConnectEvent event) {
+        Player player = event.getPlayer();
+        String currentServer = player.getCurrentServer()
+                .map(connection -> connection.getServerInfo().getName())
+                .orElse("");
+        publishPresence(new ProxyPresenceSnapshot(
+                ProxyPresenceState.ONLINE, 0L, currentServer), player.getUniqueId());
+    }
+
+    @Subscribe
     public void onDisconnect(DisconnectEvent event) {
-        presenceHistory.markDisconnected(event.getPlayer().getUniqueId());
+        UUID playerId = event.getPlayer().getUniqueId();
+        presenceHistory.markDisconnected(playerId);
+        publishPresence(PresenceStateResolver.resolve(
+                Optional.empty(), presenceHistory.lastDisconnectAt(playerId), clock.instant()), playerId);
     }
 
     @Subscribe
@@ -138,6 +156,27 @@ public final class VelocityBridgePlugin {
             }
         } catch (IOException exception) {
             warnings.warn("stats-encode", "无法编码统计响应");
+        }
+    }
+
+    private void publishPresence(ProxyPresenceSnapshot snapshot, UUID targetPlayerId) {
+        PresencePush push = new PresencePush(
+                presenceSequence.incrementAndGet(), targetPlayerId, snapshot);
+        byte[] message = PresenceMessageCodec.encodePush(push);
+        Set<String> sentServers = new HashSet<>();
+        for (Player onlinePlayer : server.getAllPlayers()) {
+            Optional<ServerConnection> currentServer = onlinePlayer.getCurrentServer();
+            if (currentServer.isEmpty()) {
+                continue;
+            }
+            ServerConnection connection = currentServer.orElseThrow();
+            String serverName = connection.getServerInfo().getName();
+            if (!sentServers.add(serverName)) {
+                continue;
+            }
+            if (!connection.sendPluginMessage(CHANNEL, message)) {
+                warnings.warn("presence-push-send", "无法发送 Presence 状态推送");
+            }
         }
     }
 
